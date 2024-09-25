@@ -3,7 +3,7 @@ entries:
   helm-test:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2024-09-25T11:44:34.383162+03:00"
+    created: "2024-09-25T16:11:09.8690416+03:00"
     description: A Helm chart for Kubernetes
     digest: 8b695c25ae9cf8c8038e643affce0a959b96a3ae27b56d96397c6a6117569101
     name: helm-test
@@ -11,4 +11,15 @@ entries:
     urls:
     - https://FadiaAlmelhem.github.io/helm-test/helm-test-0.1.0.tgz
     version: 0.1.0
-generated: "2024-09-25T11:44:34.3813428+03:00"
+  helm-test2:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2024-09-25T16:11:09.8710739+03:00"
+    description: A Helm chart for Kubernetes
+    digest: 4c88b1aaa95ec69273d1b2d5d2a2e375d8a3d56af526eef4ef561df80b9385bc
+    name: helm-test2
+    type: application
+    urls:
+    - https://FadiaAlmelhem.github.io/helm-test/helm-test2-0.1.0.tgz
+    version: 0.1.0
+generated: "2024-09-25T16:11:09.8608214+03:00"

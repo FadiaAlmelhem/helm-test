@@ -1,53 +1,78 @@
-name: Update Index
+name: Generate index.html and Update Helm
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
     paths:
-      - '**.tgz'
+      - '**.tgz'  # Trigger Helm chart update on .tgz file push
+
 permissions:
   contents: write
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install pyyaml
+
+    - name: Generate index.html
+      run: |
+        python update_helm_repo.py
+
+    - name: Commit and push changes to index.html
+      run: |
+        git config --global user.email "${{ secrets.GIT_USER_EMAIL }}"
+        git config --global user.name "${{ secrets.GIT_USER_NAME }}"
+        git add index.html
+        git commit -m "Update index.html"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.MY_GITHUB_PAT }}
+
   publish:
     runs-on: ubuntu-20.04
     steps:
-      # Checkout the Helm chart source
-      - name: Chart Checkout
-        uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.MY_GITHUB_PAT }}  # Use PAT for checkout
+    - name: Chart Checkout
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.MY_GITHUB_PAT }}
 
-      # Install Helm
-      - name: Helm Installation
-        uses: azure/setup-helm@v1.1
-        with:
-          version: v3.7.0
+    - name: Helm Installation
+      uses: azure/setup-helm@v1.1
+      with:
+        version: v3.7.0
 
-      # Checkout the repository where the chart is stored
-      - name: Helm Repository Checkout
-        uses: actions/checkout@v2
-        with:
-          repository: yourorg/helm-chart-repository
-          token: ${{ secrets.MY_GITHUB_PAT }}  # Use PAT here too
-          fetch-depth: 0
-          persist-credentials: true
-          ref: main
-          path: helm-chart-repository
+    - name: Helm Repository Checkout
+      uses: actions/checkout@v2
+      with:
+        repository: yourorg/helm-chart-repository
+        token: ${{ secrets.MY_GITHUB_PAT }}
+        fetch-depth: 0
+        persist-credentials: true
+        ref: main
+        path: helm-chart-repository
 
-      # Package the Helm chart
-      - name: Helm Package
-        run: helm package my-chart --version "0.1.0+$(git rev-parse --short "$GITHUB_SHA")" -d helm-chart-repository
+    - name: Helm Package
+      run: helm package my-chart --version "0.1.0+$(git rev-parse --short "$GITHUB_SHA")" -d helm-chart-repository
 
-      # Push the new chart to the repository
-      - name: Helm Push
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_PAT }}  # Use PAT for push
-        run: |
-          git config --global user.email "${{ secrets.GIT_USER_EMAIL }}"
-          git config --global user.name "${{ secrets.GIT_USER_NAME }}"
-          CHART_PACKAGE_NAME="my-chart-0.1.0+$(git rev-parse --short "$GITHUB_SHA").tgz"
-          cd helm-chart-repository
-          git add "$CHART_PACKAGE_NAME"
-          git commit -m "$CHART_PACKAGE_NAME"
-          git push origin main
+    - name: Helm Push
+      env:
+        GITHUB_TOKEN: ${{ secrets.MY_GITHUB_PAT }}
+      run: |
+        git config --global user.email "${{ secrets.GIT_USER_EMAIL }}"
+        git config --global user.name "${{ secrets.GIT_USER_NAME }}"
+        CHART_PACKAGE_NAME="my-chart-0.1.0+$(git rev-parse --short "$GITHUB_SHA").tgz"
+        cd helm-chart-repository
+        git add "$CHART_PACKAGE_NAME"
+        git commit -m "$CHART_PACKAGE_NAME"
+        git push origin main

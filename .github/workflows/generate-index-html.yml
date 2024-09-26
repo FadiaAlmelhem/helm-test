@@ -23,7 +23,7 @@ jobs:
 
     - name: Generate index.html
       run: |
-        python generate_index_html.py
+        python update_helm_repo.py
 
     - name: Commit and push changes
       run: |

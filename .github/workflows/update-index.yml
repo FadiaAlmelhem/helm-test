@@ -1,81 +1,43 @@
-name: Generate index.html and Update Helm
+name: Update Helm Repository Index
 
 on:
   push:
     branches:
-      - main
+      - main  # or the branch of your choice
     paths:
-      - '**.tgz'  # Trigger Helm chart update on .tgz file push
+      - 'charts/**'
 
 permissions:
   contents: write
-
+  
 jobs:
-  build:
+  update-index:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.MY_GITHUB_PAT }}  # Use PAT for authentication
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
+      - name: Set up Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-    - name: Install dependencies
-      run: |
-        python -m pip install pyyaml
+      - name: Cache Helm repo index file
+        id: cache-helm-index
+        uses: actions/cache@v2
+        with:
+          path: docs/index.yaml
+          key: ${{ runner.os }}-helm-index
 
-    - name: Generate index.html
-      run: |
-        python update_helm_repo.py
+      - name: Package Helm Charts
+        run: |
+          mkdir -p docs
+          helm package charts/* --destination docs/
+          helm repo index docs/ --url https://FadiaAlmelhem.github.io/helm-test/
 
-    - name: Commit and push changes to index.html
-      run: |
-        git config --global user.email "${{ secrets.GIT_USER_EMAIL }}"
-        git config --global user.name "${{ secrets.GIT_USER_NAME }}"
-        git pull origin main --rebase  # Pull the latest changes from the remote branch
-        git add index.html
-        git commit -m "Update index.html"
-        git push
-      env:
-        GITHUB_TOKEN: ${{ secrets.MY_GITHUB_PAT }}
-
-  publish:
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Chart Checkout
-      uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.MY_GITHUB_PAT }}  # Use PAT for authentication
-
-    - name: Helm Installation
-      uses: azure/setup-helm@v1.1
-      with:
-        version: v3.7.0
-
-    - name: Helm Repository Checkout
-      uses: actions/checkout@v3
-      with:
-        repository: yourorg/helm-chart-repository
-        token: ${{ secrets.MY_GITHUB_PAT }}
-        fetch-depth: 0
-        persist-credentials: true
-        ref: main
-        path: helm-chart-repository
-
-    - name: Helm Package
-      run: helm package my-chart --version "0.1.0+$(git rev-parse --short "$GITHUB_SHA")" -d helm-chart-repository
-
-    - name: Helm Push
-      env:
-        GITHUB_TOKEN: ${{ secrets.MY_GITHUB_PAT }}
-      run: |
-        git config --global user.email "${{ secrets.GIT_USER_EMAIL }}"
-        git config --global user.name "${{ secrets.GIT_USER_NAME }}"
-        CHART_PACKAGE_NAME="my-chart-0.1.0+$(git rev-parse --short "$GITHUB_SHA").tgz"
-        cd helm-chart-repository
-        git add "$CHART_PACKAGE_NAME"
-        git commit -m "$CHART_PACKAGE_NAME"
-        git push origin main
+      - name: Commit changes
+        run: |
+          git config --global user.email "${{ secrets.GIT_USER_EMAIL }}"
+          git config --global user.name "${{ secrets.GIT_USER_NAME }}"
+          git add docs/
+          git commit -m "Update Helm repository index"
+          git push

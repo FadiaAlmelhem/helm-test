@@ -25,3 +25,5 @@ jobs:
           git add index.yaml
           git commit -m "Update chart index"
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_PAT }}

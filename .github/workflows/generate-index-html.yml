@@ -3,7 +3,7 @@ name: Generate index.html
 on:
   push:
     branches:
-      - main
+      - test
 permissions:
   contents: write
 

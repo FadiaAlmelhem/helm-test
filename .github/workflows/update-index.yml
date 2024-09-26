@@ -6,6 +6,8 @@ on:
     branches: [ main ]
     paths:
       - '**.tgz'
+permissions:
+  contents: write
 
 jobs:
   build:
